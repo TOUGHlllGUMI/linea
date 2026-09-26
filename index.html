@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="● からなぞって、穴以外の全部のマスを一度ずつ通る一筆書きパズル。">
+<meta name="description" content="●から線を引き、穴以外の全マスを1回ずつ通る一筆書きパズル。">
 <meta name="theme-color" content="#1c3462">
 <title>Linea</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -200,13 +200,13 @@
       <button class="icon-btn" id="snd" aria-pressed="true" aria-label="音">音</button>
     </div>
   </header>
-  <p class="rule">● から指をはなさずになぞって、穴以外のすべてのマスを一度ずつ通ろう。なぞった道を戻ると取り消せます。</p>
+  <p class="rule">●から指を離さずに線を引き、穴以外の全マスを1回ずつ通過しよう。引いた線を逆に辿ると取り消せます。</p>
 
   <div class="board" id="board">
     <canvas id="cv" tabindex="0" aria-label="パズル盤面。矢印キーでも動かせます"></canvas>
     <div class="overlay" id="ov" hidden>
       <div class="card">
-        <p class="big">できた</p>
+        <p class="big">完成</p>
         <p id="ovsub"></p>
         <button id="next">次の問題へ</button>
       </div>
@@ -215,8 +215,8 @@
 
   <div class="bar">
     <div class="count" id="count">1 / 16 <small>マス</small></div>
-    <button id="undo">もどす</button>
-    <button id="reset">さいしょから</button>
+    <button id="undo">1手戻す</button>
+    <button id="reset">最初から</button>
     <button id="hint">ヒント</button>
   </div>
 </div>
