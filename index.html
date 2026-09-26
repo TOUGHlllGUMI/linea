@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="● からなぞって、穴以外の全部のマスを一度ずつ通る一筆書きパズル。">
+<meta name="theme-color" content="#1c3462">
+<title>ひとふで</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap">
+<style>
+  :root {
+    --bg: #e8ecf2;
+    --surface: #f7f9fc;
+    --line: #c9d2e0;
+    --tile: #d2dae7;
+    --tile-on: #b4c4df;
+    --wall: #c2cbd9;
+    --hole: #a3afc3;
+    --ink: #1c3462;
+    --glow: #ffffff;
+    --text: #18202f;
+    --muted: #5a6780;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d121d;
+      --surface: #161d2c;
+      --line: #28334a;
+      --tile: #1d273c;
+      --tile-on: #2a3b60;
+      --wall: #10151f;
+      --hole: #05070c;
+      --ink: #9ebdf6;
+      --glow: #ffffff;
+      --text: #e5ebf6;
+      --muted: #8995ae;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d121d;
+    --surface: #161d2c;
+    --line: #28334a;
+    --tile: #1d273c;
+    --tile-on: #2a3b60;
+    --wall: #10151f;
+    --hole: #05070c;
+    --ink: #9ebdf6;
+    --glow: #ffffff;
+    --text: #e5ebf6;
+    --muted: #8995ae;
+    color-scheme: dark;
+  }
+
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+  }
+  .app {
+    position: fixed;
+    inset: 0;
+    box-sizing: border-box;
+    max-width: 560px;
+    margin: 0 auto;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    line-height: 1;
+  }
+  h1 span { color: var(--ink); }
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .level {
+    min-width: 5.5em;
+    text-align: center;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .rule {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .board {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    display: grid;
+    place-items: center;
+  }
+  canvas {
+    display: block;
+    touch-action: none;
+    cursor: pointer;
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .count {
+    margin-right: auto;
+    font-weight: 700;
+    font-size: 18px;
+    font-variant-numeric: tabular-nums;
+  }
+  .count small {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  button {
+    font: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 9px 13px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:hover:not(:disabled) { border-color: var(--ink); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .icon-btn { padding: 6px 10px; }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 22px 28px;
+    text-align: center;
+    box-shadow: 0 12px 40px rgba(10, 20, 40, 0.25);
+    display: grid;
+    gap: 6px;
+    animation: pop 0.35s ease-out;
+  }
+  .card .big {
+    margin: 0;
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    color: var(--ink);
+  }
+  .card p { margin: 0; color: var(--muted); }
+  .card button {
+    margin-top: 10px;
+    background: var(--ink);
+    color: var(--surface);
+    border-color: var(--ink);
+  }
+  @keyframes pop {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: none; opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>ひと<span>ふで</span></h1>
+    <div class="nav">
+      <button class="icon-btn" id="prev" aria-label="前の問題">‹</button>
+      <div class="level" id="level">第 1 問</div>
+      <button class="icon-btn" id="fwd" aria-label="次の問題">›</button>
+      <button class="icon-btn" id="snd" aria-pressed="true" aria-label="音">音</button>
+    </div>
+  </header>
+  <p class="rule">● から指をはなさずになぞって、穴以外のすべてのマスを一度ずつ通ろう。なぞった道を戻ると取り消せます。</p>
+
+  <div class="board" id="board">
+    <canvas id="cv" tabindex="0" aria-label="パズル盤面。矢印キーでも動かせます"></canvas>
+    <div class="overlay" id="ov" hidden>
+      <div class="card">
+        <p class="big">できた</p>
+        <p id="ovsub"></p>
+        <button id="next">次の問題へ</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bar">
+    <div class="count" id="count">1 / 16 <small>マス</small></div>
+    <button id="undo">もどす</button>
+    <button id="reset">さいしょから</button>
+    <button id="hint">ヒント</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+  const cv = $('#cv'), ctx = cv.getContext('2d');
+  const boardEl = $('#board'), ov = $('#ov');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  // ---- 問題生成(問題番号をシードにするので、同じ番号はいつも同じ盤面) ----
+  function rng(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const SIZES = [[4, 4], [5, 5], [5, 5], [5, 6], [5, 6], [6, 6], [6, 6], [6, 7], [6, 7], [6, 7], [7, 7], [7, 7], [7, 8], [7, 8], [7, 9]];
+  const sizeFor = (lv) => SIZES[Math.min(lv - 1, SIZES.length - 1)];
+
+  function generate(lv) {
+    const [W, H] = sizeFor(lv);
+    const N = W * H;
+    const r = rng(lv * 9973 + 17);
+    const nb = (i) => {
+      const x = i % W, y = (i / W) | 0, o = [];
+      if (x > 0) o.push(i - 1);
+      if (x < W - 1) o.push(i + 1);
+      if (y > 0) o.push(i - W);
+      if (y < H - 1) o.push(i + W);
+      return o;
+    };
+    const color = (i) => ((i % W) + ((i / W) | 0)) & 1;
+
+    // 穴を先にあけて、残ったマスを全部通る道が本当にあるかを探索で確かめる
+    const want = Math.max(1, Math.round(N * Math.min(0.18, 0.05 + lv * 0.01)));
+    for (let attempt = 0; attempt < 150; attempt++) {
+      const open = new Uint8Array(N).fill(1);
+      let placed = 0;
+      for (let t = 0; t < 400 && placed < want; t++) {
+        const i = (r() * N) | 0;
+        if (!open[i]) continue;
+        open[i] = 0;
+        if (holesOk(open)) placed++;
+        else open[i] = 1;
+      }
+      if (placed < want) continue;
+      const sol = hamPath(open);
+      if (sol) return { W, H, N, open, sol, total: sol.length, start: sol[0] };
+    }
+    return walkPuzzle();
+
+    function holesOk(open) {
+      let first = -1, cnt = 0, bw = 0, ends = 0;
+      for (let i = 0; i < N; i++) {
+        if (!open[i]) continue;
+        cnt++;
+        bw += color(i) ? 1 : -1;
+        if (first < 0) first = i;
+        if (nb(i).filter((j) => open[j]).length === 1) ends++;
+      }
+      // 市松模様の白黒の数が2つ以上ずれると一筆で通れない
+      if (Math.abs(bw) > 1 || ends > 2) return false;
+      const seen = new Uint8Array(N), q = [first];
+      seen[first] = 1;
+      let reach = 1;
+      while (q.length) {
+        for (const j of nb(q.pop())) if (open[j] && !seen[j]) { seen[j] = 1; reach++; q.push(j); }
+      }
+      return reach === cnt;
+    }
+
+    function hamPath(open) {
+      const cells = [];
+      let bw = 0;
+      for (let i = 0; i < N; i++) if (open[i]) { cells.push(i); bw += color(i) ? 1 : -1; }
+      const M = cells.length;
+      const ends = cells.filter((i) => nb(i).filter((j) => open[j]).length === 1);
+      let starts = ends.length ? ends : cells.filter((i) => bw === 0 || (color(i) ? 1 : -1) === Math.sign(bw));
+      starts = starts.slice().sort(() => r() - 0.5).slice(0, 5);
+      for (const s of starts) {
+        const seen = new Uint8Array(N), p = [s];
+        seen[s] = 1;
+        let nodes = 0;
+        const free = (u, cur) => {
+          let f = 0;
+          for (const j of nb(u)) if (open[j] && (!seen[j] || j === cur)) f++;
+          return f;
+        };
+        const ok = (cur) => {
+          let dead = 0;
+          for (const u of cells) {
+            if (seen[u]) continue;
+            const f = free(u, cur);
+            if (f === 0) return false;
+            if (f === 1 && ++dead > 1) return false;
+          }
+          return true;
+        };
+        const dfs = (cur) => {
+          if (p.length === M) return true;
+          if (++nodes > 20000) return false;
+          const cand = nb(cur).filter((j) => open[j] && !seen[j])
+            .map((j) => [j, nb(j).filter((k) => open[k] && !seen[k]).length + r() * 0.9])
+            .sort((a, b) => a[1] - b[1]);
+          for (const [c] of cand) {
+            seen[c] = 1;
+            p.push(c);
+            if (ok(c) && dfs(c)) return true;
+            p.pop();
+            seen[c] = 0;
+          }
+          return false;
+        };
+        if (dfs(s)) return p;
+      }
+      return null;
+    }
+
+    function walkPuzzle() {
+    const lo = Math.ceil(N * (lv <= 2 ? 0.88 : 0.8));
+    const hi = lv <= 1 ? N : Math.floor(N * 0.95);
+    let found = null, longest = null;
+    for (let a = 0; a < 500 && !found; a++) {
+      const seen = new Uint8Array(N);
+      let cur = (r() * N) | 0;
+      const p = [cur];
+      seen[cur] = 1;
+      const noise = 0.06 + r() * 0.2;
+      for (;;) {
+        const c = nb(cur).filter((j) => !seen[j]);
+        if (!c.length) break;
+        let pick;
+        if (r() < noise) {
+          pick = c[(r() * c.length) | 0];
+        } else {
+          // 行き先の少ないマスを優先(ワーンスドルフ法)
+          let md = 9, opts = [];
+          for (const j of c) {
+            const d = nb(j).filter((k) => !seen[k]).length;
+            if (d < md) { md = d; opts = [j]; } else if (d === md) opts.push(j);
+          }
+          pick = opts[(r() * opts.length) | 0];
+        }
+        seen[pick] = 1;
+        p.push(pick);
+        cur = pick;
+      }
+      if (!longest || p.length > longest.length) longest = p;
+      if (p.length >= lo && p.length <= hi) found = p;
+    }
+    const sol = found || longest;
+    const open = new Uint8Array(N);
+    sol.forEach((i) => (open[i] = 1));
+    return { W, H, N, open, sol, total: sol.length, start: sol[0] };
+    }
+  }
+
+  // ---- 状態 ----
+  let lv = Math.max(1, store.get('hf-level', 1) | 0);
+  let maxLv = Math.max(lv, store.get('hf-max', 1) | 0);
+  let P, path, hintCell = -1, hints = 0, won = false, winT = 0;
+  let dragging = false, lastPt = null;
+  let cell = 40, cssW = 0, cssH = 0;
+
+  const head = () => path[path.length - 1];
+  const adj = (a, b) => {
+    const ax = a % P.W, ay = (a / P.W) | 0, bx = b % P.W, by = (b / P.W) | 0;
+    return Math.abs(ax - bx) + Math.abs(ay - by) === 1;
+  };
+
+  function load(n) {
+    lv = n;
+    maxLv = Math.max(maxLv, lv);
+    store.set('hf-level', lv);
+    store.set('hf-max', maxLv);
+    P = generate(lv);
+    path = [P.start];
+    hints = 0;
+    hintCell = -1;
+    won = false;
+    ov.hidden = true;
+    resize();
+    updateUI();
+  }
+
+  function updateUI() {
+    $('#level').textContent = '第 ' + lv + ' 問';
+    $('#count').innerHTML = path.length + ' / ' + P.total + ' <small>マス</small>';
+    $('#prev').disabled = lv <= 1;
+    $('#fwd').disabled = lv >= maxLv;
+    $('#undo').disabled = won || path.length <= 1;
+    $('#reset').disabled = won || path.length <= 1;
+    $('#hint').disabled = won;
+  }
+
+  function changed() {
+    updateUI();
+    requestDraw();
+  }
+
+  function step(c) {
+    path.push(c);
+    hintCell = -1;
+    tone(path.length);
+    changed();
+    if (path.length === P.total) win();
+  }
+
+  function visit(c) {
+    if (won || c < 0 || !P.open[c]) return;
+    const h = head();
+    if (c === h) return;
+    if (path.length > 1 && c === path[path.length - 2]) {
+      path.pop();
+      hintCell = -1;
+      changed();
+      return;
+    }
+    if (adj(h, c) && path.indexOf(c) < 0) step(c);
+  }
+
+  function win() {
+    won = true;
+    dragging = false;
+    winT = performance.now();
+    maxLv = Math.max(maxLv, lv + 1);
+    store.set('hf-max', maxLv);
+    store.set('hf-level', lv + 1);
+    winChord();
+    $('#ovsub').textContent = P.total + 'マスをひとふで。' + (hints ? 'ヒント ' + hints + ' 回' : 'ヒントなし');
+    setTimeout(() => { if (won) { ov.hidden = false; $('#next').focus(); } }, reduceMotion ? 0 : 1100);
+    updateUI();
+    requestDraw();
+  }
+
+  function hint() {
+    if (won) return;
+    audioInit();
+    let k = 0;
+    while (k < path.length && path[k] === P.sol[k]) k++;
+    path.length = k;
+    hintCell = P.sol[k];
+    hints++;
+    changed();
+  }
+
+  // ---- 入力 ----
+  function hit(cx, cy) {
+    const rc = cv.getBoundingClientRect();
+    const x = Math.floor((cx - rc.left) / cell), y = Math.floor((cy - rc.top) / cell);
+    if (x < 0 || y < 0 || x >= P.W || y >= P.H) return -1;
+    return y * P.W + x;
+  }
+
+  cv.addEventListener('pointerdown', (e) => {
+    if (won) return;
+    audioInit();
+    const c = hit(e.clientX, e.clientY);
+    if (c < 0 || !P.open[c]) return;
+    const k = path.indexOf(c);
+    if (k >= 0) {
+      if (k < path.length - 1) { path.length = k + 1; hintCell = -1; changed(); }
+    } else if (adj(head(), c)) {
+      step(c);
+    } else {
+      return;
+    }
+    dragging = true;
+    lastPt = [e.clientX, e.clientY];
+    try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+
+  cv.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const [x0, y0] = lastPt, dx = e.clientX - x0, dy = e.clientY - y0;
+    // 速くなぞってもマスを飛ばさないよう、移動の間を細かく刻んで判定する
+    const n = Math.max(1, Math.ceil(Math.hypot(dx, dy) / (cell * 0.25)));
+    for (let i = 1; i <= n && !won; i++) visit(hit(x0 + (dx * i) / n, y0 + (dy * i) / n));
+    lastPt = [e.clientX, e.clientY];
+  });
+
+  const endDrag = () => { dragging = false; };
+  cv.addEventListener('pointerup', endDrag);
+  cv.addEventListener('pointercancel', endDrag);
+
+  cv.addEventListener('keydown', (e) => {
+    if (won) return;
+    const h = head(), x = h % P.W, y = (h / P.W) | 0;
+    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (d) {
+      e.preventDefault();
+      audioInit();
+      const nx = x + d[0], ny = y + d[1];
+      if (nx >= 0 && ny >= 0 && nx < P.W && ny < P.H) visit(ny * P.W + nx);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      undo();
+    }
+  });
+
+  function undo() {
+    if (won || path.length <= 1) return;
+    path.pop();
+    hintCell = -1;
+    changed();
+  }
+
+  $('#undo').addEventListener('click', undo);
+  $('#reset').addEventListener('click', () => {
+    if (won) return;
+    path = [P.start];
+    hintCell = -1;
+    changed();
+  });
+  $('#hint').addEventListener('click', hint);
+  $('#next').addEventListener('click', () => { load(lv + 1); cv.focus(); });
+  $('#prev').addEventListener('click', () => { if (lv > 1) load(lv - 1); });
+  $('#fwd').addEventListener('click', () => { if (lv < maxLv) load(lv + 1); });
+
+  // ---- 音 ----
+  let ac = null, muted = !!store.get('hf-mute', false);
+  const sndBtn = $('#snd');
+  function syncSnd() {
+    sndBtn.setAttribute('aria-pressed', String(!muted));
+    sndBtn.style.opacity = muted ? '0.45' : '1';
+    sndBtn.style.textDecoration = muted ? 'line-through' : 'none';
+  }
+  sndBtn.addEventListener('click', () => {
+    muted = !muted;
+    store.set('hf-mute', muted);
+    syncSnd();
+    if (!muted) audioInit();
+  });
+  syncSnd();
+
+  function audioInit() {
+    if (muted) return;
+    if (!ac) {
+      try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+    }
+    if (ac.state === 'suspended') ac.resume();
+  }
+  const SCALE = [0, 2, 4, 7, 9];
+  function note(n, delay, dur, vol) {
+    if (!ac || muted) return;
+    const f = 261.63 * Math.pow(2, (Math.floor(n / 5) * 12 + SCALE[n % 5]) / 12);
+    const t = ac.currentTime + (delay || 0);
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine';
+    o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.12, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.35));
+    o.connect(g).connect(ac.destination);
+    o.start(t);
+    o.stop(t + (dur || 0.35) + 0.05);
+  }
+  const tone = (len) => note(3 + ((len - 2) % 10), 0, 0.3, 0.1);
+  function winChord() {
+    [5, 7, 8, 10, 12].forEach((n, i) => note(n, i * 0.09, 0.9, 0.09));
+  }
+
+  // ---- 描画 ----
+  function resize() {
+    const b = boardEl.getBoundingClientRect();
+    cell = Math.max(24, Math.floor(Math.min(b.width / P.W, b.height / P.H, 76)));
+    cssW = cell * P.W;
+    cssH = cell * P.H;
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(cssW * dpr);
+    cv.height = Math.round(cssH * dpr);
+    cv.style.width = cssW + 'px';
+    cv.style.height = cssH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    requestDraw();
+  }
+  new ResizeObserver(() => { if (P) resize(); }).observe(boardEl);
+
+  let raf = 0;
+  function requestDraw() { if (!raf) raf = requestAnimationFrame(frame); }
+  function frame(now) {
+    raf = 0;
+    draw(now);
+    if (hintCell >= 0 || (won && !reduceMotion && now - winT < 1600)) requestDraw();
+  }
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', requestDraw);
+  new MutationObserver(requestDraw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  function rrect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function dot(x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const cx = (i) => (i % P.W + 0.5) * cell;
+  const cy = (i) => (((i / P.W) | 0) + 0.5) * cell;
+
+  function draw(now) {
+    const cs = getComputedStyle(document.documentElement);
+    const col = (n) => cs.getPropertyValue(n).trim();
+    const tile = col('--tile'), on = col('--tile-on'), wall = col('--wall'), hole = col('--hole'), ink = col('--ink'), glow = col('--glow'), surface = col('--surface');
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    const inPath = new Uint8Array(P.N);
+    path.forEach((c) => (inPath[c] = 1));
+    const gap = cell * 0.07, rad = cell * 0.2;
+    for (let i = 0; i < P.N; i++) {
+      const x = (i % P.W) * cell, y = ((i / P.W) | 0) * cell;
+      if (!P.open[i]) {
+        // 穴: 一段沈んだ暗いくぼみ
+        ctx.fillStyle = wall;
+        rrect(x + gap, y + gap, cell - gap * 2, cell - gap * 2, rad);
+        ctx.fill();
+        ctx.fillStyle = hole;
+        rrect(x + gap * 2.2, y + gap * 2.6, cell - gap * 4.4, cell - gap * 4.4, rad * 0.8);
+        ctx.fill();
+        continue;
+      }
+      ctx.fillStyle = inPath[i] ? on : tile;
+      rrect(x + gap, y + gap, cell - gap * 2, cell - gap * 2, rad);
+      ctx.fill();
+    }
+
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (path.length > 1) {
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = cell * 0.3;
+      ctx.beginPath();
+      ctx.moveTo(cx(path[0]), cy(path[0]));
+      for (let i = 1; i < path.length; i++) ctx.lineTo(cx(path[i]), cy(path[i]));
+      ctx.stroke();
+    }
+
+    // クリア時: 光が筆の通り道をなぞっていく
+    if (won && !reduceMotion) {
+      const t = (now - winT) / 1100;
+      const pos = t * (path.length + 6) - 3;
+      ctx.fillStyle = glow;
+      for (let i = 0; i < path.length; i++) {
+        const a = Math.max(0, 1 - Math.abs(i - pos) / 3.5);
+        if (a <= 0) continue;
+        ctx.globalAlpha = a * 0.85;
+        dot(cx(path[i]), cy(path[i]), cell * 0.12);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // スタート地点
+    ctx.fillStyle = ink;
+    dot(cx(P.start), cy(P.start), cell * 0.24);
+    ctx.fillStyle = surface;
+    dot(cx(P.start), cy(P.start), cell * 0.09);
+
+    // 筆先
+    if (path.length > 1 && !won) {
+      const h = head();
+      ctx.fillStyle = ink;
+      dot(cx(h), cy(h), cell * 0.21);
+      ctx.globalAlpha = 0.3;
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx(h), cy(h), cell * 0.34, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    if (hintCell >= 0) {
+      const pulse = reduceMotion ? 1 : (Math.sin(now / 220) + 1) / 2;
+      const x = (hintCell % P.W) * cell, y = ((hintCell / P.W) | 0) * cell;
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = 3;
+      ctx.globalAlpha = 0.35 + 0.65 * pulse;
+      rrect(x + gap, y + gap, cell - gap * 2, cell - gap * 2, rad);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  load(lv);
+})();
+</script>
+</body>
+</html>
