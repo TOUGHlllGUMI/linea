@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="● からなぞって、穴以外の全部のマスを一度ずつ通る一筆書きパズル。">
 <meta name="theme-color" content="#1c3462">
-<title>ひとふで</title>
+<title>Linea</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap">
@@ -192,7 +192,7 @@
 <body>
 <div class="app">
   <header>
-    <h1>ひと<span>ふで</span></h1>
+    <h1>Line<span>a</span></h1>
     <div class="nav">
       <button class="icon-btn" id="prev" aria-label="前の問題">‹</button>
       <div class="level" id="level">第 1 問</div>
@@ -456,7 +456,7 @@
     store.set('hf-max', maxLv);
     store.set('hf-level', lv + 1);
     winChord();
-    $('#ovsub').textContent = P.total + 'マスをひとふで。' + (hints ? 'ヒント ' + hints + ' 回' : 'ヒントなし');
+    $('#ovsub').textContent = P.total + 'マスを一筆書き。' + (hints ? 'ヒント ' + hints + ' 回' : 'ヒントなし');
     setTimeout(() => { if (won) { ov.hidden = false; $('#next').focus(); } }, reduceMotion ? 0 : 1100);
     updateUI();
     requestDraw();
